@@ -11,12 +11,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip French custom language from /lang
+      - name: Debug - list lang directory
         run: |
-          mkdir -p /tmp/langzip
-          unzip "lang/customlang_fr(2).zip" -d /tmp/langzip
+          echo "📂 Contenu du dossier lang :"
+          ls -la lang
 
-          # Cas 1 : le zip contient fr ou fr_local
+      - name: Unzip French custom language
+        run: |
+          set -e
+
+          ZIP_FILE="lang/customlang_fr(2).zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "❌ Fichier ZIP introuvable : $ZIP_FILE"
+            exit 1
+          fi
+
+          mkdir -p /tmp/langzip
+          unzip -o "$ZIP_FILE" -d /tmp/langzip
+
+          echo "📂 Contenu du ZIP extrait :"
+          ls -la /tmp/langzip
+
+          # Installation dans fr_local (bonne pratique Moodle)
           if [ -d "/tmp/langzip/fr" ]; then
             mkdir -p lang/fr_local
             cp -r /tmp/langzip/fr/* lang/fr_local/
@@ -27,13 +44,12 @@ jobs:
             cp -r /tmp/langzip/fr_local/* lang/fr_local/
           fi
 
-          # Cas 2 : le zip contient lang/fr
           if [ -d "/tmp/langzip/lang/fr" ]; then
             mkdir -p lang/fr_local
             cp -r /tmp/langzip/lang/fr/* lang/fr_local/
           fi
 
-          echo "✅ Traduction française personnalisée installée dans lang/fr_local"
+          echo "✅ Traduction installée dans lang/fr_local"
 
       - name: Remove zip file
         run: rm -f "lang/customlang_fr(2).zip"
@@ -43,5 +59,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add lang/fr_local
-          git commit -m "Ajout traduction française Iomad (custom fr_local)"
+          git commit -m "Ajout traduction française Iomad (fr_local)"
           git push
