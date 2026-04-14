@@ -1,0 +1,83 @@
+name: Unzip French Iomad custom language pack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  unzip-lang:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Debug - list lang directory
+        run: |
+          echo "📂 Contenu du dossier lang :"
+          ls -la lang
+
+      - name: Debug - list ZIP content
+        run: |
+          echo "📦 Contenu du ZIP :"
+          unzip -l "lang/customlang_fr (2).zip"
+
+      - name: Unzip French custom language
+        run: |
+          set -e
+
+          ZIP_FILE="lang/customlang_fr (2).zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "❌ Fichier ZIP introuvable : $ZIP_FILE"
+            exit 1
+          fi
+
+          mkdir -p /tmp/langzip
+          unzip -o "$ZIP_FILE" -d /tmp/langzip
+
+          echo "📂 Contenu extrait :"
+          ls -la /tmp/langzip
+
+          # Dossier cible recommandé Moodle / Iomad
+          mkdir -p lang/fr_local
+
+          # Cas FR (majuscule)
+          if [ -d "/tmp/langzip/FR" ]; then
+            cp -r /tmp/langzip/FR/* lang/fr_local/
+          fi
+
+          # Cas fr (minuscule)
+          if [ -d "/tmp/langzip/fr" ]; then
+            cp -r /tmp/langzip/fr/* lang/fr_local/
+          fi
+
+          # Cas fr_local
+          if [ -d "/tmp/langzip/fr_local" ]; then
+            cp -r /tmp/langzip/fr_local/* lang/fr_local/
+          fi
+
+          # Cas lang/fr dans le zip
+          if [ -d "/tmp/langzip/lang/fr" ]; then
+            cp -r /tmp/langzip/lang/fr/* lang/fr_local/
+          fi
+
+          echo "✅ Traduction française installée dans lang/fr_local"
+
+      - name: Remove zip file
+        run: rm -f "lang/customlang_fr (2).zip"
+
+      - name: Commit French language files (if needed)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add lang/fr_local || true
+
+          if git diff --cached --quiet; then
+            echo "ℹ️ Aucun changement à commiter"
+            exit 0
+          fi
+
+          git commit -m "Ajout / mise à jour traduction française Iomad (fr_local)"
+          git push
+``
