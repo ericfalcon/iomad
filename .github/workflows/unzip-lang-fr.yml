@@ -1,4 +1,4 @@
-name: Unzip French Iomad language pack
+name: Unzip French Iomad custom language pack
 
 on:
   workflow_dispatch:
@@ -11,12 +11,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip language archive
+      - name: Unzip French custom language from /lang
         run: |
           mkdir -p /tmp/langzip
-          unzip iomad-fr.zip -d /tmp/langzip
+          unzip "lang/customlang_fr(2).zip" -d /tmp/langzip
 
-          # Cas 1 : le zip contient déjà "fr" ou "fr_local"
+          # Cas 1 : le zip contient fr ou fr_local
           if [ -d "/tmp/langzip/fr" ]; then
             mkdir -p lang/fr_local
             cp -r /tmp/langzip/fr/* lang/fr_local/
@@ -27,21 +27,21 @@ jobs:
             cp -r /tmp/langzip/fr_local/* lang/fr_local/
           fi
 
-          # Cas 2 : le zip contient "lang/fr"
+          # Cas 2 : le zip contient lang/fr
           if [ -d "/tmp/langzip/lang/fr" ]; then
             mkdir -p lang/fr_local
             cp -r /tmp/langzip/lang/fr/* lang/fr_local/
           fi
 
-          echo "✅ Langue française installée dans lang/fr_local"
+          echo "✅ Traduction française personnalisée installée dans lang/fr_local"
 
-      - name: Remove zip
-        run: rm -f iomad-fr.zip
+      - name: Remove zip file
+        run: rm -f "lang/customlang_fr(2).zip"
 
-      - name: Commit language files
+      - name: Commit French language files
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add lang/fr_local
-          git commit -m "Ajout traduction française Iomad (fr_local)"
+          git commit -m "Ajout traduction française Iomad (custom fr_local)"
           git push
