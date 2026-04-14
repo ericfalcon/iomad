@@ -80,4 +80,3 @@ jobs:
 
           git commit -m "Ajout / mise à jour traduction française Iomad (fr_local)"
           git push
-``
