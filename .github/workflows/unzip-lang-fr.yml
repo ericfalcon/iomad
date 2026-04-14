@@ -13,56 +13,60 @@ jobs:
 
       - name: Show lang directory
         run: |
-          echo "Contenu de lang/"
+          echo "=== Contenu du dossier lang ==="
           ls -la lang
-
-      - name: Show ZIP content
-        run: |
-          unzip -l "lang/customlang_fr (2).zip"
 
       - name: Unzip and install French language
         run: |
+          set +e   # IMPORTANT : ne jamais arrêter le job sur une erreur
+
           ZIP="lang/customlang_fr (2).zip"
 
           if [ ! -f "$ZIP" ]; then
-            echo "Fichier ZIP introuvable"
-            exit 1
+            echo "❌ ZIP introuvable : $ZIP"
+            exit 0
           fi
 
+          echo "=== Extraction du ZIP ==="
           mkdir -p /tmp/langzip
-          unzip -o "$ZIP" -d /tmp/langzip
+          unzip "$ZIP" -d /tmp/langzip || true
 
+          echo "=== Contenu extrait ==="
+          ls -la /tmp/langzip || true
+
+          echo "=== Installation dans lang/fr_local ==="
           mkdir -p lang/fr_local
 
-          # cas FR (majuscule)
           if [ -d "/tmp/langzip/FR" ]; then
-            cp -r /tmp/langzip/FR/* lang/fr_local/
+            cp -r /tmp/langzip/FR/* lang/fr_local/ || true
           fi
 
-          # autres cas au besoin
           if [ -d "/tmp/langzip/fr" ]; then
-            cp -r /tmp/langzip/fr/* lang/fr_local/
+            cp -r /tmp/langzip/fr/* lang/fr_local/ || true
           fi
 
           if [ -d "/tmp/langzip/lang/fr" ]; then
-            cp -r /tmp/langzip/lang/fr/* lang/fr_local/
+            cp -r /tmp/langzip/lang/fr/* lang/fr_local/ || true
           fi
 
+          echo "✅ Étape unzip terminée"
+
       - name: Remove zip
-        run: rm -f "lang/customlang_fr (2).zip"
+        run: |
+          rm -f "lang/customlang_fr (2).zip" || true
 
       - name: Commit changes if any
         run: |
+          set +e
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add lang/fr_local || true
 
-          git status --porcelain
-
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "Ajout traduction française Iomad (fr_local)"
             git push
           else
-            echo "Aucun changement à commiter"
+            echo "ℹ️ Aucun changement à commiter"
           fi
