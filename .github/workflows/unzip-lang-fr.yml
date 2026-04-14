@@ -11,72 +11,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Debug - list lang directory
+      - name: Show lang directory
         run: |
-          echo "📂 Contenu du dossier lang :"
+          echo "Contenu de lang/"
           ls -la lang
 
-      - name: Debug - list ZIP content
+      - name: Show ZIP content
         run: |
-          echo "📦 Contenu du ZIP :"
           unzip -l "lang/customlang_fr (2).zip"
 
-      - name: Unzip French custom language
+      - name: Unzip and install French language
         run: |
-          set -e
+          ZIP="lang/customlang_fr (2).zip"
 
-          ZIP_FILE="lang/customlang_fr (2).zip"
-
-          if [ ! -f "$ZIP_FILE" ]; then
-            echo "❌ Fichier ZIP introuvable : $ZIP_FILE"
+          if [ ! -f "$ZIP" ]; then
+            echo "Fichier ZIP introuvable"
             exit 1
           fi
 
           mkdir -p /tmp/langzip
-          unzip -o "$ZIP_FILE" -d /tmp/langzip
+          unzip -o "$ZIP" -d /tmp/langzip
 
-          echo "📂 Contenu extrait :"
-          ls -la /tmp/langzip
-
-          # Dossier cible recommandé Moodle / Iomad
           mkdir -p lang/fr_local
 
-          # Cas FR (majuscule)
+          # cas FR (majuscule)
           if [ -d "/tmp/langzip/FR" ]; then
             cp -r /tmp/langzip/FR/* lang/fr_local/
           fi
 
-          # Cas fr (minuscule)
+          # autres cas au besoin
           if [ -d "/tmp/langzip/fr" ]; then
             cp -r /tmp/langzip/fr/* lang/fr_local/
           fi
 
-          # Cas fr_local
-          if [ -d "/tmp/langzip/fr_local" ]; then
-            cp -r /tmp/langzip/fr_local/* lang/fr_local/
-          fi
-
-          # Cas lang/fr dans le zip
           if [ -d "/tmp/langzip/lang/fr" ]; then
             cp -r /tmp/langzip/lang/fr/* lang/fr_local/
           fi
 
-          echo "✅ Traduction française installée dans lang/fr_local"
-
-      - name: Remove zip file
+      - name: Remove zip
         run: rm -f "lang/customlang_fr (2).zip"
 
-      - name: Commit French language files (if needed)
+      - name: Commit changes if any
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add lang/fr_local || true
 
-          if git diff --cached --quiet; then
-            echo "ℹ️ Aucun changement à commiter"
-            exit 0
-          fi
+          git status --porcelain
 
-          git commit -m "Ajout / mise à jour traduction française Iomad (fr_local)"
-          git push
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Ajout traduction française Iomad (fr_local)"
+            git push
+          else
+            echo "Aucun changement à commiter"
+          fi
