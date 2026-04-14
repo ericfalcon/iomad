@@ -13,12 +13,12 @@ jobs:
 
       - name: Show lang directory
         run: |
-          echo "=== Contenu du dossier lang ==="
+          echo "=== Contenu du dossier lang AVANT ==="
           ls -la lang
 
       - name: Unzip and install French language
         run: |
-          set +e   # IMPORTANT : ne jamais arrêter le job sur une erreur
+          set +e
 
           ZIP="lang/customlang_fr (2).zip"
 
@@ -37,32 +37,26 @@ jobs:
           echo "=== Installation dans lang/fr_local ==="
           mkdir -p lang/fr_local
 
-          if [ -d "/tmp/langzip/FR" ]; then
-            cp -r /tmp/langzip/FR/* lang/fr_local/ || true
-          fi
+          # Le ZIP contient directement les fichiers .php
+          cp -r /tmp/langzip/*.php lang/fr_local/ || true
 
-          if [ -d "/tmp/langzip/fr" ]; then
-            cp -r /tmp/langzip/fr/* lang/fr_local/ || true
-          fi
-
-          if [ -d "/tmp/langzip/lang/fr" ]; then
-            cp -r /tmp/langzip/lang/fr/* lang/fr_local/ || true
-          fi
-
-          echo "✅ Étape unzip terminée"
+          echo "✅ Fichiers copiés dans lang/fr_local"
 
       - name: Remove zip
         run: |
           rm -f "lang/customlang_fr (2).zip" || true
 
-      - name: Commit changes if any
+      - name: Commit changes (force add, Moodle gitignore)
         run: |
           set +e
-
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add lang/fr_local || true
+          # FORCE l'ajout malgré .gitignore
+          git add -f lang/fr_local || true
+          git add -f lang/customlang_fr\ \(2\).zip || true
+
+          git status --porcelain
 
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "Ajout traduction française Iomad (fr_local)"
@@ -70,3 +64,8 @@ jobs:
           else
             echo "ℹ️ Aucun changement à commiter"
           fi
+
+      - name: Show lang directory after
+        run: |
+          echo "=== Contenu du dossier lang APRES ==="
+          ls -la lang
